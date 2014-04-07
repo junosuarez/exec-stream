@@ -27,12 +27,24 @@ function execStream (cmd, args, options) {
     AB.push(null)
   })
 
+  B.on('error', function(err) {
+    AB.emit('error', err)
+  })
+
+  A.on('error', function(err) {
+    AB.emit('error', err)
+  })
+
 
   var proc = spawn(cmd, args, options)
 
 
   A.pipe(proc.stdin)
   proc.stdout.pipe(B)
+
+  proc.on('error', function(err) {
+    AB.emit('error', err)
+  })
 
   return AB
 }

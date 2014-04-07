@@ -39,6 +39,18 @@ describe('exec-stream', function () {
       done()
     }, { delay: 5 }))
   })
+
+  it('propagates proc errors to returned stream', function (done) {
+    var gotError = false
+    exec('foobar.baz')
+    .on('error', function(err) {
+      gotError = true
+    })
+    .pipe(Sink(function (data, len) {
+      gotError.should.equal(true)
+      done()
+    }, { delay: 5 }))
+  })
 })
 
 function Sink(cb, options) {
@@ -60,7 +72,10 @@ function Sink(cb, options) {
   })
 
   sink.on('end', function () {
-    cb(sink.data, len)
+    if (options && options.delay)
+      setTimeout(cb.bind(cb, sink.data, len), options.delay)
+    else
+      cb(sink.data, len)
   })
 
   return sink
