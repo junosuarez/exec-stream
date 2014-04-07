@@ -14,7 +14,6 @@ function execStream (cmd, args, options) {
 
   AB.on('finish', function () {
     A.end()
-    A.emit('end')
   })
 
   AB._read = function (n) {
@@ -25,8 +24,15 @@ function execStream (cmd, args, options) {
   })
 
   B.on('end', function () {
-    AB.end()
-    AB.emit('end')
+    AB.push(null)
+  })
+
+  B.on('error', function(err) {
+    AB.emit('error', err)
+  })
+
+  A.on('error', function(err) {
+    AB.emit('error', err)
   })
 
 
@@ -35,6 +41,10 @@ function execStream (cmd, args, options) {
 
   A.pipe(proc.stdin)
   proc.stdout.pipe(B)
+
+  proc.on('error', function(err) {
+    AB.emit('error', err)
+  })
 
   return AB
 }

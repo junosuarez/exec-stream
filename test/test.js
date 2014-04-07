@@ -31,14 +31,39 @@ describe('exec-stream', function () {
     }))
 
   })
+
+  it('properly flushes all data', function (done) {
+    exec('cat', [__dirname + '/data'])
+    .pipe(Sink(function (data, len) {
+      len.should.equal(512000)
+      done()
+    }, { delay: 5 }))
+  })
+
+  it('propagates proc errors to returned stream', function (done) {
+    var gotError = false
+    exec('foobar.baz')
+    .on('error', function(err) {
+      gotError = true
+    })
+    .pipe(Sink(function (data, len) {
+      gotError.should.equal(true)
+      done()
+    }, { delay: 5 }))
+  })
 })
 
-function Sink(cb) {
+function Sink(cb, options) {
   var sink = new Stream.Writable
+  var len = 0
   sink.data = ''
   sink._write = function (chunk, encoding, cb) {
+    len += chunk.length
     sink.data += chunk.toString(encoding !== 'buffer' ? encoding : undefined)
-    cb()
+    if (options && options.delay)
+      setTimeout(cb, options.delay)
+    else
+      cb()
   }
   sink.on('pipe', function (src) {
     src.on('end', function () {
@@ -47,7 +72,10 @@ function Sink(cb) {
   })
 
   sink.on('end', function () {
-    cb(sink.data)
+    if (options && options.delay)
+      setTimeout(cb.bind(cb, sink.data, len), options.delay)
+    else
+      cb(sink.data, len)
   })
 
   return sink
