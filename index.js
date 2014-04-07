@@ -14,7 +14,6 @@ function execStream (cmd, args, options) {
 
   AB.on('finish', function () {
     A.end()
-    A.emit('end')
   })
 
   AB._read = function (n) {
