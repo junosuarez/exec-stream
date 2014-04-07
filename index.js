@@ -17,10 +17,12 @@ function execStream (cmd, args, options) {
   })
 
   AB._read = function (n) {
+    proc.kill('SIGCONT')
   }
 
   B.on('readable', function() {
-    AB.push(B.read())
+    if (!AB.push(B.read()))
+      proc.kill('SIGSTOP')
   })
 
   B.on('end', function () {
