@@ -24,8 +24,7 @@ function execStream (cmd, args, options) {
   })
 
   B.on('end', function () {
-    AB.end()
-    AB.emit('end')
+    AB.push(null)
   })
 
 
